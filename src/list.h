@@ -13,14 +13,27 @@ typedef struct list_iter_t {
   struct list_iter_t *next;
 } list_iter_t;
 
+typedef struct list_iter_rev_t {
+  struct list_iter_t *next;
+  struct list_iter_t *prev;
+} list_iter_rev_t;
+
 #define list_t(type)                                                           \
   struct {                                                                     \
     list_iter_t iter;                                                          \
     type data;                                                                 \
   }
 
+#define list_rev_t(type)                                                       \
+  struct {                                                                     \
+    list_iter_rev_t iter;                                                      \
+    type data;                                                                 \
+  }
+
+#define list_reverse(list) (list_rev_t(typeof((list)->data)) *)(list)
+
 #define list_iter(list) (&(list)->iter)
-#define list_data(list, iter) (((typeof(list) *)(iter))->data)
+#define list_data(list, iter) (((typeof(list))(iter))->data)
 
 #define list_alloc(type) (list_t(type) *)malloc(sizeof(list_t(type)))
 
@@ -33,14 +46,14 @@ typedef struct list_iter_t {
 
 #define list_init(type)                                                        \
   ({                                                                           \
-    __auto_type *list = list_alloc(type);                                      \
+    __auto_type list = list_alloc(type);                                       \
     list_reset(list);                                                          \
     list;                                                                      \
   })
 
 #define list_init_literal(type, ...)                                           \
   ({                                                                           \
-    __auto_type *list = list_init(type);                                       \
+    __auto_type list = list_init(type);                                        \
     const type content_array[] = __VA_ARGS__;                                  \
     for (size_t i = 0; i < sizeof(content_array) / sizeof(type); i++) {        \
       list_push_back(list, content_array[i]);                                  \
@@ -50,7 +63,7 @@ typedef struct list_iter_t {
 
 #define list_init_array(type, array, size)                                     \
   ({                                                                           \
-    __auto_type *list = list_init(type);                                       \
+    __auto_type list = list_init(type);                                        \
     for (size_t i = 0; i < size; i++) {                                        \
       list_push_back(list, array[i]);                                          \
     }                                                                          \
@@ -58,14 +71,15 @@ typedef struct list_iter_t {
   })
 
 #define list_begin(list) (list_iter(list)->next)
-#define list_end(list) (list_iter(list)->list)
+#define list_end(list) (list_iter(list)->prev)
 
 #define list_empty(list) (list_iter(list)->next == list_iter(list))
 
 #define list_front(list) list_data(list, list_begin(list))
 #define list_back(list) list_data(list, list_end(list))
 
-static inline void list_insert(list_iter_t *prev, list_iter_t *next, list_iter_t *node) {
+static inline void list_insert(list_iter_t *prev, list_iter_t *next,
+                               list_iter_t *node) {
   next->prev = node;
   node->next = next;
   node->prev = prev;
@@ -74,14 +88,14 @@ static inline void list_insert(list_iter_t *prev, list_iter_t *next, list_iter_t
 
 #define list_push_back(list, value)                                            \
   do {                                                                         \
-    typeof(list) node = (typeof(list))malloc(sizeof(typeof(list)));            \
+    typeof(list) node = (typeof(list))malloc(sizeof(typeof(*list)));            \
     node->data = (value);                                                      \
     list_insert(list_iter(list)->prev, list_iter(list), list_iter(node));      \
   } while (0)
 
 #define list_push_front(list, value)                                           \
   do {                                                                         \
-    typeof(list) node = (typeof(list))malloc(sizeof(typeof(list)));            \
+    typeof(list) node = (typeof(list))malloc(sizeof(typeof(*list)));            \
     node->data = value;                                                        \
     list_insert(list_iter(list), list_iter(list)->next, list_iter(node));      \
   } while (0)
@@ -100,7 +114,7 @@ static inline void list_concat(list_iter_t *prev, list_iter_t *next) {
 #define list_pop_front(list, iter) list_remove(list, list_begin(list))
 #define list_pop_back(list, iter) list_remove(list, list_end(list))
 
-#define list_apply(list, func)                                                 \
+#define list_apply(list, func, ...)                                            \
   do {                                                                         \
     for (list_iter_t *iter = list->next; iter != list;) {                      \
       func(list_data(list, iter), __VA_ARGS__);                                \

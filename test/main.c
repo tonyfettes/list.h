@@ -1,8 +1,8 @@
 #include "list.h"
 #include <stdlib.h>
 
-#define auto __auto_type
-
 int main() {
+  __auto_type l = list_init(int);
+  list_push_back(l, 3);
   return 0;
 }
