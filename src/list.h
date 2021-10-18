@@ -14,8 +14,8 @@ typedef struct list_iter_t {
 } list_iter_t;
 
 typedef struct list_iter_flip_t {
-  struct list_iter_t *next;
-  struct list_iter_t *prev;
+  struct list_iter_flip_t *next;
+  struct list_iter_flip_t *prev;
 } list_iter_flip_t;
 
 #define list_t(type)                                                           \
@@ -82,7 +82,11 @@ typedef struct list_head_t {
     list_iter(list___)->next == list_iter(list___);                            \
   })
 
-#define list_size(list) (((list_head_t *)(list))->size)
+#define list_size(list)                                                        \
+  ({                                                                           \
+    const size_t size___ = ((list_head_t *)(list))->size;                      \
+    size___;                                                                   \
+  })
 
 #define list_front(list) list_data(list, list_iter(list)->next)
 #define list_back(list) list_data(list, list_iter(list)->prev)
@@ -155,13 +159,21 @@ typedef struct list_head_t {
     ret;                                                                       \
   })
 
-#define list_flip(list) (list_flip_t(list_type(list)) *)(list)
-
-#define list_reverse(list, left_iter, right_iter)                              \
-  do {                                                                         \
+#define list_flip(list)                                                        \
+  ({                                                                           \
     __auto_type list___ = (list);                                              \
+    _Generic(list_iter(list___), list_iter_t *                                 \
+             : (list_flip_t(list_type(list___)) *)(list___),                   \
+               list_iter_flip_t *                                              \
+             : (list_t(list_type(list___)) *)(list___));                       \
+  })
+
+#define list_iter_reverse(left_iter, right_iter)                               \
+  do {                                                                         \
     __auto_type left___ = (left_iter);                                         \
     __auto_type right___ = (right_iter);                                       \
+    left___->prev->next = right___->prev;                                      \
+    right___->prev = left___;                                                  \
     for (__auto_type iter = left___; iter != right___;) {                      \
       __auto_type target = iter;                                               \
       iter = iter->next;                                                       \
@@ -173,34 +185,39 @@ typedef struct list_head_t {
 
 #define list_equal(left, right, data_compare)                                  \
   ({                                                                           \
-    __auto_type lhs = (left);                                                  \
-    __auto_type rhs = (right);                                                 \
-    __auto_type comp = (data_compare);                                         \
-    __auto_type lhs_iter = list_begin(lhs);                                    \
-    __auto_type rhs_iter = list_begin(rhs);                                    \
-    int result = 1;                                                            \
-    while (lhs_iter != list_end(lhs) && rhs_iter != rhs_end(rhs)) {            \
-      if (comp(list_data(lhs, lhs_iter), list_data(rhs, rhs_iter)) == 0) {     \
-        result = 0;                                                            \
-        break;                                                                 \
+    __auto_type left___ = (left);                                              \
+    __auto_type right___ = (right);                                            \
+    __auto_type comp___ = (data_compare);                                      \
+    __auto_type left_iter = list_begin(left___);                               \
+    __auto_type right_iter = list_begin(right___);                             \
+    int result = (list_size(left___) == list_size(right___));                  \
+    if (result) {                                                              \
+      while (left_iter != list_end(left___) &&                                 \
+             right_iter != list_end(right___)) {                               \
+        if (comp___(&list_data(left___, left_iter),                            \
+                    &list_data(right___, right_iter)) != 0) {                  \
+          result = 0;                                                          \
+          break;                                                               \
+        } else {                                                               \
+          left_iter = left_iter->next;                                         \
+          right_iter = right_iter->next;                                       \
+        }                                                                      \
       }                                                                        \
     }                                                                          \
-    result &&lhs_iter == list_end(lhs) && rhs_iter == rhs_end(rhs);            \
+    result;                                                                    \
   })
 
-#define list_copy(list, data_copy)                                             \
+#define list_clone(list, data_copy)                                            \
   ({                                                                           \
-    __auto_type _l = (list);                                                   \
-    __auto_type new_list = list_init(list_type(_l));                           \
-    for (__auto_type iter = list_begin(_l); list_end(_l); iter = iter->next) { \
-      list_push_back(new_list, data_copy(list_data(_l, iter)));                \
+    __auto_type list___ = (list);                                              \
+    __auto_type copy___ = (data_copy);                                         \
+    __auto_type new_list = list_init(list_type(list___));                      \
+    for (__auto_type iter = list_begin(list___); iter != list_end(list___);    \
+         iter = iter->next) {                                                  \
+      list_push_back(new_list, copy___(&list_data(list___, iter)));            \
     }                                                                          \
     new_list;                                                                  \
   })
-
-#ifndef LIST_SORT_INSERT_THRESHOLD
-#define LIST_SORT_INSERT_THRESHOLD 8
-#endif
 
 #define list_sort(list, data_compare)                                          \
   do {                                                                         \
@@ -208,8 +225,8 @@ typedef struct list_head_t {
     __auto_type comp___ = (data_compare);                                      \
     __auto_type list_head = list_iter(list___);                                \
     typeof(list_head) list_tail =                                              \
-        (typeof(list_head))list_alloc(sizeof(list_head));                      \
-    list_reset(list_tail);                                                     \
+        (typeof(list_head))list_alloc(sizeof(*list_head));                     \
+    list_tail->next = list_tail;                                               \
     list_head->prev->next = list_tail;                                         \
     __auto_type init_head = list_head;                                         \
     __auto_type init_cut = init_head->next->next;                              \
@@ -230,7 +247,8 @@ typedef struct list_head_t {
         right->prev->next = tail;                                              \
         seg_cut = seg_tail;                                                    \
         while (left != tail && right != tail) {                                \
-          if (comp___(list_data(list___, right), list_data(list___, left))) {  \
+          if (comp___(&list_data(list___, right), &list_data(list___, left)) < \
+              0) {                                                             \
             list_iter_concat(seg_head, right);                                 \
             right = right->next;                                               \
           } else {                                                             \
@@ -272,6 +290,8 @@ typedef struct list_head_t {
         init_tail = seg_old->next;                                             \
       }                                                                        \
     }                                                                          \
+    list_tail->prev->next = list_head;                                         \
+    free(list_tail);                                                           \
   } while (0)
 
 #define list_access(list, func, ...)                                           \
@@ -280,13 +300,16 @@ typedef struct list_head_t {
     __auto_type end___ = list_end(list);                                       \
     __auto_type func___ = (func);                                              \
     for (__auto_type iter = begin___; iter != end___; iter = iter->next) {     \
-      func___(list_data(list, iter), __VA_ARGS__);                             \
+      func___(&list_data(list, iter), __VA_ARGS__);                            \
     }                                                                          \
   } while (0)
 
-#define list_trivially_destory(list)                                           \
+#define list_trivial_destroy(list)                                             \
   do {                                                                         \
-    for (__auto_type iter = list_begin(list); iter != list_end(list);) {       \
+    __auto_type list___ = (list);                                              \
+    __auto_type begin = list_begin(list___);                                   \
+    __auto_type end = list_end(list___);                                       \
+    for (__auto_type iter = begin; iter != end;) {                             \
       __auto_type victim = iter;                                               \
       iter = iter->next;                                                       \
       list_free(victim);                                                       \
@@ -299,7 +322,7 @@ typedef struct list_head_t {
     for (__auto_type iter = list_begin(list); iter != list_end(list);) {       \
       __auto_type victim = iter;                                               \
       iter = iter->next;                                                       \
-      data_destroy(list_data(list, iter), __VA_ARGS__);                        \
+      data_destroy(&list_data(list, iter), __VA_ARGS__);                       \
       list_free(victim);                                                       \
     }                                                                          \
     list_free(list);                                                           \
