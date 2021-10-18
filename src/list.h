@@ -31,7 +31,7 @@ typedef struct list_iter_flip_t {
   }
 
 typedef struct list_head_t {
-  struct list_iter_t iter;
+  list_iter_t iter;
   size_t size;
 } list_head_t;
 
