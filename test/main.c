@@ -178,13 +178,10 @@ int main() {
     list_push_back(correct, 7);
     list_push_back(correct, 8);
     list_push_back(correct, 9);
-    for (__auto_type iter = list_begin(left); iter != list_end(left);
-         iter = iter->next) {
-      printf("%d ", list_data(left, iter));
-    }
-    putchar('\n');
     assert(list_equal(left, correct, comp));
-    fprintf(stderr, "merge test successful\n");
+    list_trivial_destroy(left);
+    list_trivial_destroy(right);
+    list_trivial_destroy(correct);
   }
   { // swap
     __auto_type left = list_init(int);
@@ -202,17 +199,10 @@ int main() {
     list_swap(left, right);
     assert(list_equal(left, right_copy, comp));
     assert(list_equal(right, left_copy, comp));
-  }
-  { // swap for sort
-    fprintf(stderr, "swap for sort\n");
-    __auto_type left = list_init(int);
-    list_push_back(left, 4);
-    __auto_type left_copy = list_clone(left, int_copier);
-    __auto_type right = list_init(int);
-    __auto_type right_copy = list_clone(right, int_copier);
-    list_swap(left, right);
-    assert(list_equal(left, right_copy, comp));
-    assert(list_equal(right, left_copy, comp));
+    list_trivial_destroy(left);
+    list_trivial_destroy(left_copy);
+    list_trivial_destroy(right);
+    list_trivial_destroy(right_copy);
   }
   { // sort
     enum { array_size = 64 };
@@ -223,7 +213,6 @@ int main() {
     __auto_type list = list_from_array(int, array, array_size);
     assert(list_size(list) == array_size);
     list_sort(list, comp);
-    fprintf(stderr, "list_size: %zu\n", list_size(list));
     assert(list_size(list) == array_size);
     qsort(array, array_size, sizeof(array[0]), comp);
     for (int i = 0; i < array_size; i++) {

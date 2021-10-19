@@ -139,19 +139,19 @@ typedef struct list_head_t {
 
 #define list_pop_front(list)                                                   \
   ({                                                                           \
-    __auto_type list____ = (list);                                              \
-    __auto_type front = list_begin(list____);                                   \
-    __auto_type ret = list_data(list____, front);                               \
-    list_erase(list____, front);                                                \
+    __auto_type list____ = (list);                                             \
+    __auto_type front = list_begin(list____);                                  \
+    __auto_type ret = list_data(list____, front);                              \
+    list_erase(list____, front);                                               \
     ret;                                                                       \
   })
 
 #define list_pop_back(list)                                                    \
   ({                                                                           \
-    __auto_type list____ = (list);                                              \
-    __auto_type back = list_rbegin(list____);                                   \
-    __auto_type ret = list_data(list____, back);                                \
-    list_erase(list____, back);                                                 \
+    __auto_type list____ = (list);                                             \
+    __auto_type back = list_rbegin(list____);                                  \
+    __auto_type ret = list_data(list____, back);                               \
+    list_erase(list____, back);                                                \
     ret;                                                                       \
   })
 
@@ -311,6 +311,10 @@ typedef struct list_head_t {
       list_merge(*counter, *(counter - 1), list_sort_comp___);                 \
     }                                                                          \
     list_swap(list_sort_list___, *(fill - 1));                                 \
+    list_free(carry);                                                          \
+    for (int i = 0; i < 64; i++) {                                             \
+      list_free(tmp[i]);                                                       \
+    }                                                                          \
   } while (0)
 
 #define list_access(list, func, ...)                                           \
