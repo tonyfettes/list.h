@@ -157,6 +157,63 @@ int main() {
     list_trivial_destroy(list);
     list_trivial_destroy(flip);
   }
+  { // merge
+    __auto_type left = list_init(int);
+    list_push_back(left, 1);
+    list_push_back(left, 3);
+    list_push_back(left, 5);
+    list_push_back(left, 8);
+    __auto_type right = list_init(int);
+    list_push_back(right, 2);
+    list_push_back(right, 4);
+    list_push_back(right, 7);
+    list_push_back(right, 9);
+    list_merge(left, right, comp);
+    __auto_type correct = list_init(int);
+    list_push_back(correct, 1);
+    list_push_back(correct, 2);
+    list_push_back(correct, 3);
+    list_push_back(correct, 4);
+    list_push_back(correct, 5);
+    list_push_back(correct, 7);
+    list_push_back(correct, 8);
+    list_push_back(correct, 9);
+    for (__auto_type iter = list_begin(left); iter != list_end(left);
+         iter = iter->next) {
+      printf("%d ", list_data(left, iter));
+    }
+    putchar('\n');
+    assert(list_equal(left, correct, comp));
+    fprintf(stderr, "merge test successful\n");
+  }
+  { // swap
+    __auto_type left = list_init(int);
+    list_push_back(left, 1);
+    list_push_back(left, 3);
+    list_push_back(left, 5);
+    list_push_back(left, 8);
+    __auto_type left_copy = list_clone(left, int_copier);
+    __auto_type right = list_init(int);
+    list_push_back(right, 2);
+    list_push_back(right, 4);
+    list_push_back(right, 7);
+    list_push_back(right, 9);
+    __auto_type right_copy = list_clone(right, int_copier);
+    list_swap(left, right);
+    assert(list_equal(left, right_copy, comp));
+    assert(list_equal(right, left_copy, comp));
+  }
+  { // swap for sort
+    fprintf(stderr, "swap for sort\n");
+    __auto_type left = list_init(int);
+    list_push_back(left, 4);
+    __auto_type left_copy = list_clone(left, int_copier);
+    __auto_type right = list_init(int);
+    __auto_type right_copy = list_clone(right, int_copier);
+    list_swap(left, right);
+    assert(list_equal(left, right_copy, comp));
+    assert(list_equal(right, left_copy, comp));
+  }
   { // sort
     enum { array_size = 64 };
     int array[array_size] = { 0 };
@@ -166,6 +223,8 @@ int main() {
     __auto_type list = list_from_array(int, array, array_size);
     assert(list_size(list) == array_size);
     list_sort(list, comp);
+    fprintf(stderr, "list_size: %zu\n", list_size(list));
+    assert(list_size(list) == array_size);
     qsort(array, array_size, sizeof(array[0]), comp);
     for (int i = 0; i < array_size; i++) {
       fprintf(stderr, "%d ", array[i]);
@@ -177,7 +236,7 @@ int main() {
     fputc('\n', stderr);
     for (int i = 0; i < array_size; i++) {
       int result = list_pop_front(list);
-      printf("%d <=> %d\n", array[i], result);
+      fprintf(stderr, "[%d]: %d <=> %d\n", i, array[i], result);
       assert(array[i] == result);
     }
     assert(list_size(list) == 0);
