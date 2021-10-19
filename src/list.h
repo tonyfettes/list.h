@@ -219,79 +219,89 @@ typedef struct list_head_t {
     new_list;                                                                  \
   })
 
+#define list_iter_swap(left_iter, right_iter)                                  \
+  do {                                                                         \
+    __auto_type left_iter___ = (left_iter);                                    \
+    __auto_type right_iter___ = (right_iter);                                  \
+    right_iter___->next->prev = left_iter___;                                  \
+    right_iter___->prev->next = left_iter___;                                  \
+    left_iter___->next->prev = right_iter___;                                  \
+    left_iter___->prev->next = right_iter___;                                  \
+    __auto_type temp = right_iter___->next;                                    \
+    right_iter___->next = left_iter___->next;                                  \
+    left_iter___->next = temp;                                                 \
+    temp = right_iter___->prev;                                                \
+    right_iter___->prev = left_iter___->prev;                                  \
+    left_iter___->prev = temp;                                                 \
+  } while (0)
+
+#define list_swap(left, right)                                                 \
+  do {                                                                         \
+    __auto_type left___ = (left);                                              \
+    __auto_type right___ = (right);                                            \
+    list_iter_swap(list_iter(left___), list_iter(right___));                   \
+  } while (0)
+
+#define list_merge(left, right, data_compare)                                  \
+  ({                                                                           \
+    __auto_type left___ = (left);                                              \
+    __auto_type right___ = (right);                                            \
+    __auto_type comp___ = (data_compare);                                      \
+    __auto_type new_list = list_init(list_type(left___));                      \
+    __auto_type left_iter = list_begin(left___);                               \
+    __auto_type right_iter = list_begin(right___);                             \
+    __auto_type merge_iter = list_begin(new_list);                             \
+    while (left_iter != list_end(left___) &&                                   \
+           right_iter != list_end(right___)) {                                 \
+      if (comp___(&list_data(left___, left_iter),                              \
+                  &list_data(right___, right_iter)) < 0) {                     \
+        list_iter_concat(merge_iter, right_iter);                              \
+        right_iter = right_iter->next;                                         \
+      } else {                                                                 \
+        list_iter_concat(merge_iter, left_iter);                               \
+        left_iter = left_iter->next;                                           \
+      }                                                                        \
+      merge_iter = merge_iter->next;                                           \
+    }                                                                          \
+    if (left_iter != list_end(left___)) {                                      \
+      list_iter_concat(merge_iter, left_iter);                                 \
+      list_iter_concat(list_rbegin(left___), list_begin(new_list));            \
+    }                                                                          \
+    if (right_iter != list_end(right___)) {                                    \
+      list_iter_concat(merge_iter, right_iter);                                \
+      list_iter_concat(list_rbegin(right___), list_begin(new_list));           \
+    }                                                                          \
+  })
+
 #define list_sort(list, data_compare)                                          \
   do {                                                                         \
     __auto_type list___ = (list);                                              \
     __auto_type comp___ = (data_compare);                                      \
-    __auto_type list_head = list_iter(list___);                                \
-    typeof(list_head) list_tail =                                              \
-        (typeof(list_head))list_alloc(sizeof(*list_head));                     \
-    list_tail->next = list_tail;                                               \
-    list_head->prev->next = list_tail;                                         \
-    __auto_type init_head = list_head;                                         \
-    __auto_type init_cut = init_head->next->next;                              \
-    __auto_type init_tail = init_cut->next;                                    \
-    while (init_cut != list_tail) {                                            \
-      __auto_type seg_head = init_head;                                        \
-      __auto_type seg_old = seg_head;                                          \
-      __auto_type seg_cut = init_cut;                                          \
-      __auto_type seg_tail = init_tail;                                        \
-      init_head = list_tail;                                                   \
-      init_cut = list_tail;                                                    \
-      init_tail = list_tail;                                                   \
-      while (seg_cut != list_tail) {                                           \
-        __auto_type left = seg_head->next;                                     \
-        __auto_type right = seg_cut;                                           \
-        __auto_type tail = seg_tail;                                           \
-        left->prev->next = tail;                                               \
-        right->prev->next = tail;                                              \
-        seg_cut = seg_tail;                                                    \
-        while (left != tail && right != tail) {                                \
-          if (comp___(&list_data(list___, right), &list_data(list___, left)) < \
-              0) {                                                             \
-            list_iter_concat(seg_head, right);                                 \
-            right = right->next;                                               \
-          } else {                                                             \
-            list_iter_concat(seg_head, left);                                  \
-            left = left->next;                                                 \
-            seg_cut = seg_cut->next;                                           \
-          }                                                                    \
-          seg_head = seg_head->next;                                           \
-          seg_tail = seg_tail->next;                                           \
-        }                                                                      \
-        while (left != tail) {                                                 \
-          list_iter_concat(seg_head, left);                                    \
-          left = left->next;                                                   \
-          seg_head = seg_head->next;                                           \
-          seg_cut = seg_cut->next;                                             \
-          seg_tail = seg_tail->next;                                           \
-        }                                                                      \
-        while (right != tail) {                                                \
-          list_iter_concat(seg_head, right);                                   \
-          right = right->next;                                                 \
-          seg_head = seg_head->next;                                           \
-          seg_tail = seg_tail->next;                                           \
-        }                                                                      \
-        tail->prev = seg_head;                                                 \
-        if (init_head == list_tail) {                                          \
-          init_head = seg_old;                                                 \
-        } else if (init_cut == list_tail) {                                    \
-          init_cut = seg_old->next;                                            \
-        } else if (init_tail == list_tail) {                                   \
-          init_tail = seg_old->next;                                           \
-        }                                                                      \
-        seg_old = seg_head;                                                    \
-      }                                                                        \
-      if (init_head == list_tail) {                                            \
-        init_head = seg_old;                                                   \
-      } else if (init_cut == list_tail) {                                      \
-        init_cut = seg_old->next;                                              \
-      } else if (init_tail == list_tail) {                                     \
-        init_tail = seg_old->next;                                             \
-      }                                                                        \
+    __auto_type carry = list_init(list_type(list___));                         \
+    typeof(list___) tmp[64];                                                   \
+    for (int i = 0; i < 64; i++) {                                             \
+      tmp[i] = list_init(list_type(list___));                                  \
     }                                                                          \
-    list_tail->prev->next = list_head;                                         \
-    free(list_tail);                                                           \
+    typeof(list___) *fill = tmp;                                               \
+    typeof(list___) *counter;                                                  \
+    do {                                                                       \
+      __auto_type node = list_begin(list);                                     \
+      list_erase(list, node);                                                  \
+      list_iter_insert(list_iter(carry), list_iter(carry)->next, node);        \
+      for (counter = tmp; counter != fill && !list_empty(*counter);            \
+           ++counter) {                                                        \
+        *counter = list_merge(*counter, carry, comp___);                       \
+        list_swap(*counter, carry);                                            \
+      }                                                                        \
+      list_swap(*counter, carry);                                              \
+      if (counter == fill) {                                                   \
+        fill++;                                                                \
+      }                                                                        \
+    } while (!list_empty(list___));                                            \
+    for (counter = tmp + 1; counter != fill; ++counter) {                      \
+      list_merge(*counter, *(counter - 1), comp___);                           \
+    }                                                                          \
+    list_swap(list___, *(fill - 1));                                           \
   } while (0)
 
 #define list_access(list, func, ...)                                           \

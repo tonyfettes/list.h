@@ -15,6 +15,7 @@ int main() {
     l.push_back(rand());
   }
   clock_t start = clock();
+  // l.merge(l);
   l.sort(comp);
   clock_t end = clock();
   printf("%lf\n", (double)(end - start) / CLOCKS_PER_SEC);
