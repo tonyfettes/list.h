@@ -26,4 +26,4 @@ int main() {
 
 ## Performance
 
-`list_sort` in this implemented is around 12% faster than `std::list::sort` in c++.
+`list_sort` in this implementation is around 10% faster than `std::list::sort` in c++.
