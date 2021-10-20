@@ -6,7 +6,7 @@
 #endif
 
 #ifndef BENCH_LIST_SIZE
-#define BENCH_LIST_SIZE 10000000
+#define BENCH_LIST_SIZE 100000000
 #endif
 
 #endif // _SORT_SIZE_H_

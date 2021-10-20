@@ -9,15 +9,25 @@ bool comp(const int &a, const int &b) {
 }
 
 int main() {
+  srand(1234);
   std::ios_base::sync_with_stdio(false);
-  std::list<int> l;
-  for (int i = 0; i < BENCH_LIST_SIZE; i++) {
-    l.push_back(rand());
+  clock_t start, stop;
+  {
+    start = clock();
+    std::list<int> l;
+    for (int i = 0; i < BENCH_LIST_SIZE; i++) {
+      l.push_back(rand());
+    }
+    stop = clock();
+    printf("setup: %lf\n", (double)(stop - start) / CLOCKS_PER_SEC);
+    start = clock();
+    // l.merge(l);
+    l.sort(comp);
+    stop = clock();
+    printf("sort: %lf\n", (double)(stop - start) / CLOCKS_PER_SEC);
+    start = clock();
   }
-  clock_t start = clock();
-  // l.merge(l);
-  l.sort(comp);
-  clock_t end = clock();
-  printf("%lf\n", (double)(end - start) / CLOCKS_PER_SEC);
+  stop = clock();
+  printf("dealloc: %lf\n", (double)(stop - start) / CLOCKS_PER_SEC);
   return 0;
 }
