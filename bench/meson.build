@@ -1,16 +1,28 @@
-c = executable(
-  'list_h_sort',
-  'list_h_sort.c',
-  include_directories: incdir,
+self_impl = executable(
+  'self_impl',
+  [
+    'src/bench.h',
+    'src/bench_size.h',
+    'src/list_h_sort.c',
+    'src/main.c'],
+  dependencies: [list],
   c_args: [
-    '-O3'
+    '-O3',
+    '-flto',
   ],
+  link_args: [
+    '-flto',
+  ]
 )
 
-cpp = executable(
+std_impl = executable(
   'std_list_sort',
-  'std_list_sort.cpp',
-  include_directories: incdir,
+  [
+    'src/bench.h',
+    'src/bench_size.h',
+    'src/std_list_sort.cpp',
+    'src/main.c'],
+  dependencies: [list],
   cpp_args: [
     '-O3',
     '-flto',

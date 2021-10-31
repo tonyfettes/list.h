@@ -2,16 +2,16 @@
 #include <cstdio>
 #include <iostream>
 #include <ctime>
-#include "sort_size.h"
+#include "bench.h"
 
 bool comp(const int &a, const int &b) {
   return a < b;
 }
 
-int main() {
-  srand(1234);
-  std::ios_base::sync_with_stdio(false);
+extern "C"
+double bench() {
   clock_t start, stop;
+  double sort_time;
   {
     start = clock();
     std::list<int> l;
@@ -24,10 +24,11 @@ int main() {
     // l.merge(l);
     l.sort(comp);
     stop = clock();
-    printf("sort: %lf\n", (double)(stop - start) / CLOCKS_PER_SEC);
+    sort_time = (double)(stop - start) / CLOCKS_PER_SEC;
+    printf("sort: %lf\n", sort_time);
     start = clock();
   }
   stop = clock();
   printf("dealloc: %lf\n", (double)(stop - start) / CLOCKS_PER_SEC);
-  return 0;
+  return sort_time;
 }

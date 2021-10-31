@@ -1,3 +1,7 @@
-main = executable('main', 'main.c', include_directories: incdir)
+main = executable(
+  'main',
+  'main.c',
+  dependencies: [list]
+)
 
-test('main test', main)
+test('test/main', main)
