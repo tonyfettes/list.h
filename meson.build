@@ -9,6 +9,7 @@ project(
 )
 
 list_incdir = include_directories('src')
+install_headers('src/list.h')
 list = declare_dependency(include_directories: list_incdir)
 
 subdir('bench')
