@@ -1,3 +1,8 @@
+**DEPRECATED**
+
+**See
+[tllist](https://codeberg.org/dnkl/tllist/src/branch/master)**
+
 # `list.h`
 
 Linked list library implemented in GNU C.
